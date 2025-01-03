@@ -6,6 +6,13 @@ Escriba el codigo que ejecute la accion solicitada en cada pregunta.
 """
 
 
+import zipfile
+import os
+import glob
+import fileinput
+import pandas as pd
+
+
 def pregunta_01():
     """
     La información requerida para este laboratio esta almacenada en el
@@ -71,3 +78,58 @@ def pregunta_01():
 
 
     """
+    zip_path = "files/input.zip"
+    descomprimir_tarea(zip_path)
+    directory_test = "files/input/input/test"
+    directory_train = "files/input/input/train"
+    test = iterar_en_carpetas(directory_test)
+    train = iterar_en_carpetas(directory_train)
+    # Crear la carpeta output si no existe
+    output_dir = "files/output"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Rutas de los archivos CSV
+    test_csv = os.path.join(output_dir, "test_dataset.csv")
+    train_csv = os.path.join(output_dir, "train_dataset.csv")
+
+    # Guardar los DataFrames como archivos CSV
+    test.to_csv(test_csv, index=False)
+    train.to_csv(train_csv, index=False)
+
+    # Confirmar y devolver las rutas de los archivos generados
+    print(f"Archivos generados:\nTest: {test_csv}\nTrain: {train_csv}")
+    return test_csv, train_csv
+
+
+def descomprimir_tarea(zip_path):
+    if not os.path.exists(zip_path):
+        print(f"El archivo {zip_path} no existe.")
+        return
+    
+    extract_path = os.path.splitext(zip_path)[0]
+    
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_path)
+        print(f"Archivo descomprimido en: {extract_path}")
+    except zipfile.BadZipFile:
+        print(f"El archivo {zip_path} no es un archivo ZIP válido.")
+
+def iterar_en_carpetas(directory):
+    sequences = []
+    files = [f for f in glob.glob(f"{directory}/**", recursive=True) if os.path.isfile(f)]
+    
+    if not files:
+        return sequences
+    
+    with fileinput.input(files=files) as file:
+        for line in file:
+            folder_name = os.path.basename(os.path.dirname(fileinput.filename()))
+            sequences.append((folder_name, line.strip())) 
+    df1 = pd.DataFrame(sequences, columns=["target", "phrase"])
+    df = df1[['phrase', 'target']]
+
+    return df
+
+if __name__ == "__main__":
+    pregunta_01()
